@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Islamic Story Studio Pro</title>
+
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#020617">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+/* --- Styles --- */
+:root { --primary: #10b981; --bg: #020617; --card: #0f172a; --text: #f1f5f9; --border: #334155; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); padding-bottom: 100px; }
+
+/* Header */
+header {
+    height: 60px; background: rgba(2,6,23,0.95); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 1.2rem; font-weight: bold; color: var(--primary); position: fixed; top: 0; width: 100%; z-index: 100;
+}
+
+.main-content { margin-top: 70px; padding: 20px; max-width: 800px; margin-left: auto; margin-right: auto; }
+
+/* Control Panel */
+.panel { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 20px; }
+.input-group { margin-bottom: 15px; }
+label { display: block; color: #94a3b8; font-size: 0.85rem; margin-bottom: 5px; }
+input, select, textarea {
+    width: 100%; padding: 12px; background: #020617; border: 1px solid var(--border);
+    color: white; border-radius: 8px; outline: none; font-size: 1rem;
+}
+input:focus, select:focus { border-color: var(--primary); }
+
+/* Buttons */
+.btn-main {
+    width: 100%; padding: 15px; background: linear-gradient(to right, #10b981, #059669);
+    border: none; border-radius: 10px; color: white; font-weight: bold; font-size: 1.1rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.btn-main:disabled { opacity: 0.7; cursor: wait; }
+
+/* Segment Card */
+.card { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 20px; position: relative; }
+.card-head { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+.badge { background: var(--primary); color: black; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+
+/* Script Box */
+.script-box { min-height: 100px; line-height: 1.6; font-family: 'Segoe UI', serif; }
+.urdu { font-family: 'Noto Nastaliq Urdu', serif; text-align: right; font-size: 1.2rem; line-height: 2.2; }
+
+/* Action Grid */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+.btn-act { padding: 10px; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; font-size: 0.9rem; }
+.btn-audio { background: #3b82f6; }
+.btn-img { background: #8b5cf6; }
+.btn-dl { background: #22c55e; margin-top: 10px; width: 100%; }
+
+/* Results */
+.res-box { display: none; margin-top: 10px; background: #000; padding: 10px; border-radius: 8px; text-align: center; }
+img { width: 100%; border-radius: 5px; }
+audio { width: 100%; height: 35px; margin-bottom: 5px; }
+
+/* Loader */
+.loader { display: none; text-align: center; padding: 20px; }
+.spin { animation: spin 1s linear infinite; font-size: 2rem; color: var(--primary); }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Note */
+.note { font-size: 0.75rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+    <span class="material-icons-round">mosque</span> &nbsp;Islamic Studio
+</header>
+
+<div class="main-content">
+
+    <div class="panel">
+        <label>Story Category</label>
+        <select id="category">
+            <option value="Prophets">📜 Qisas al-Anbiya (Prophets)</option>
+            <option value="Sahaba">⚔️ Hayatus Sahaba</option>
+            <option value="Islamic History">🏰 Islamic History</option>
+        </select>
+
+        <div class="input-group" style="margin-top:10px;">
+            <label>Topic Name (e.g. Musa AS)</label>
+            <input type="text" id="topic" placeholder="Type topic here...">
+        </div>
+
+        <div class="grid">
+            <div>
+                <label>Language</label>
+                <select id="lang">
+                    <option value="hindi">🇮🇳 Hindi (Urdu Tone)</option>
+                    <option value="urdu">🇵🇰 Pure Urdu</option>
+                </select>
+            </div>
+            <div>
+                <label>Scenes</label>
+                <select id="count">
+                    <option value="5">5 Scenes</option>
+                    <option value="8">8 Scenes</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="note">
+            ⚠️ <b>Note:</b> If "Script Error" appears, please upload this code to GitHub Pages. Vercel blocks Localhost connections.
+        </div>
+
+        <button class="btn-main" id="genBtn" onclick="startStoryGen()" style="margin-top:15px;">
+            <span class="material-icons-round">auto_stories</span> Generate Story
+        </button>
+    </div>
+
+    <div id="loader" class="loader">
+        <span class="material-icons-round spin">sync</span>
+        <p>Connecting to Kahani-Box AI...</p>
+    </div>
+
+    <div id="story-area"></div>
+
+</div>
+
+<script>
+    // --- 1. APIS ---
+    // User's Vercel App for Script
+    const SCRIPT_API = "https://kahani-box-ai.vercel.app/api/generate"; 
+    // User's Render App for Audio
+    const AUDIO_API = "https://hindi-tts-3gjy.onrender.com/tts";
+    // User's Flux Space for Images (No Token Needed)
+    const IMAGE_API = "https://aatika-flux-image-gen.hf.space/api/predict";
+
+    // --- 2. GENERATE STORY ---
+    async function startStoryGen() {
+        const topic = document.getElementById("topic").value;
+        const category = document.getElementById("category").value;
+        const count = document.getElementById("count").value;
+        const lang = document.getElementById("lang").value;
+        
+        if(!topic) return alert("Please enter a topic!");
+
+        const btn = document.getElementById("genBtn");
+        const area = document.getElementById("story-area");
+        const load = document.getElementById("loader");
+
+        area.innerHTML = "";
+        load.style.display = "block";
+        btn.disabled = true;
+
+        // Prompt Logic
+        let prompt = `Topic: ${topic} (${category}). Create exactly ${count} scenes. `;
+        if(lang === "urdu") prompt += "Write script in Pure Urdu (Nastaliq). ";
+        else prompt += "Write script in Hindi but use Urdu vocabulary (Lehja). ";
+        
+        prompt += `Output strictly as JSON Array: [{"script": "...", "image_prompt": "..."}]`;
+
+        try {
+            const res = await fetch(SCRIPT_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: prompt })
+            });
+
+            if(!res.ok) throw new Error("Vercel Connection Failed. Upload to GitHub.");
+
+            const data = await res.json();
+            
+            // Handle various response formats
+            let cleanData = data;
+            if(data.text) cleanData = JSON.parse(data.text.replace(/```json|```/g, ""));
+            else if(typeof data === "string") cleanData = JSON.parse(data);
+
+            renderCards(cleanData, lang === "urdu");
+
+        } catch (e) {
+            alert("Script Error: " + e.message + "\n\nTry uploading this file to GitHub.");
+            console.error(e);
+        } finally {
+            load.style.display = "none";
+            btn.disabled = false;
+        }
+    }
+
+    // --- 3. RENDER CARDS ---
+    function renderCards(scenes, isUrdu) {
+        const area = document.getElementById("story-area");
+        
+        scenes.forEach((item, idx) => {
+            const id = idx + 1;
+            const fontClass = isUrdu ? "urdu" : "";
+            const dir = isUrdu ? "rtl" : "ltr";
+
+            const div = document.createElement("div");
+            div.className = "card";
+            div.innerHTML = `
+                <div class="card-head">
+                    <span class="badge">Scene ${id}</span>
+                </div>
+                
+                <label>Script</label>
+                <textarea id="txt-${id}" class="script-box ${fontClass}" dir="${dir}">${item.script}</textarea>
+                
+                <input type="hidden" id="prm-${id}" value="${item.image_prompt}">
+
+                <div class="grid">
+                    <div>
+                        <button class="btn-act btn-audio" onclick="makeAudio(${id})" id="btn-aud-${id}">
+                            <span class="material-icons-round">mic</span> Audio ${id}
+                        </button>
+                        <div id="res-aud-${id}" class="res-box">
+                            <audio id="player-${id}" controls></audio>
+                            <button class="btn-act btn-dl" onclick="dlAudio(${id})">Save Audio</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button class="btn-act btn-img" onclick="makeImage(${id})" id="btn-img-${id}">
+                            <span class="material-icons-round">image</span> Image ${id}
+                        </button>
+                        <div id="res-img-${id}" class="res-box">
+                            <img id="img-${id}">
+                            <button class="btn-act btn-dl" onclick="dlImage(${id})">Save Image</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="stat-${id}" style="text-align:center; font-size:0.8rem; margin-top:10px; color:orange;"></div>
+            `;
+            area.appendChild(div);
+        });
+    }
+
+    // --- 4. MAKE AUDIO (Microsoft TTS) ---
+    async function makeAudio(id) {
+        const text = document.getElementById(`txt-${id}`).value;
+        const btn = document.getElementById(`btn-aud-${id}`);
+        const stat = document.getElementById(`stat-${id}`);
+        
+        btn.disabled = true;
+        btn.innerHTML = "Generating...";
+        stat.innerText = `Making Audio ${id}...`;
+
+        try {
+            const res = await fetch(AUDIO_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    text: text, 
+                    voice: "ur-pk-male", // Default to Urdu Male
+                    rate: "0", pitch: "0" 
+                })
+            });
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            
+            document.getElementById(`player-${id}`).src = url;
+            document.getElementById(`res-aud-${id}`).style.display = "block";
+            stat.innerText = "";
+
+        } catch(e) { stat.innerText = "Audio Error!"; } 
+        finally { btn.disabled = false; btn.innerHTML = `<span class="material-icons-round">mic</span> Audio ${id}`; }
+    }
+
+    // --- 5. MAKE IMAGE (Flux Live URL - No Token) ---
+    async function makeImage(id) {
+        const prompt = document.getElementById(`prm-${id}`).value;
+        const btn = document.getElementById(`btn-img-${id}`);
+        const stat = document.getElementById(`stat-${id}`);
+        
+        btn.disabled = true;
+        btn.innerHTML = "Generating...";
+        stat.innerText = `Making Image ${id}...`;
+
+        try {
+            // DIRECT CALL TO YOUR SPACE (Free, No Token)
+            const res = await fetch(IMAGE_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    data: [
+                        prompt, // Prompt
+                        1280,   // Width
+                        720,    // Height
+                        -1      // Random Seed
+                    ]
+                })
+            });
+
+            const json = await res.json();
+            const url = json.data[0].url; // Gradio format
+
+            document.getElementById(`img-${id}`).src = url;
+            document.getElementById(`res-img-${id}`).style.display = "block";
+            stat.innerText = "";
+
+        } catch(e) { 
+            console.error(e);
+            stat.innerText = "Image Error! (Try Reloading)"; 
+        } 
+        finally { btn.disabled = false; btn.innerHTML = `<span class="material-icons-round">image</span> Image ${id}`; }
+    }
+
+    // --- DOWNLOADS ---
+    function dlAudio(id) {
+        const url = document.getElementById(`player-${id}`).src;
+        if(!url) return;
+        const a = document.createElement("a");
+        a.href = url; a.download = `Scene_${id}_Audio.mp3`;
+        a.click();
+    }
+    function dlImage(id) {
+        const url = document.getElementById(`img-${id}`).src;
+        if(!url) return;
+        const a = document.createElement("a");
+        a.href = url; a.download = `Scene_${id}_Image.jpg`;
+        a.click();
+    }
+</script>
+
+</body>
+</html>
