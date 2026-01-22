@@ -69,8 +69,6 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
 .spin { animation: spin 1s linear infinite; font-size: 2rem; color: var(--primary); }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* Note */
-.note { font-size: 0.75rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -110,10 +108,6 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
                 </select>
             </div>
         </div>
-        
-        <div class="note">
-            ⚠️ <b>Note:</b> If "Script Error" appears, please upload this code to GitHub Pages. Vercel blocks Localhost connections.
-        </div>
 
         <button class="btn-main" id="genBtn" onclick="startStoryGen()" style="margin-top:15px;">
             <span class="material-icons-round">auto_stories</span> Generate Story
@@ -122,7 +116,7 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
 
     <div id="loader" class="loader">
         <span class="material-icons-round spin">sync</span>
-        <p>Connecting to Kahani-Box AI...</p>
+        <p>Connecting to Server...</p>
     </div>
 
     <div id="story-area"></div>
@@ -131,11 +125,13 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
 
 <script>
     // --- 1. APIS ---
-    // User's Vercel App for Script
-    const SCRIPT_API = "https://kahani-box-ai.vercel.app/api/generate"; 
-    // User's Render App for Audio
+    
+    // UPDATE: Using CORS Proxy to bypass Vercel/GitHub restriction
+    const SCRIPT_URL = "https://kahani-box-ai.vercel.app/api/generate";
+    // We add 'corsproxy.io' before the URL to unlock it
+    const PROXY = "https://corsproxy.io/?";
+    
     const AUDIO_API = "https://hindi-tts-3gjy.onrender.com/tts";
-    // User's Flux Space for Images (No Token Needed)
     const IMAGE_API = "https://aatika-flux-image-gen.hf.space/api/predict";
 
     // --- 2. GENERATE STORY ---
@@ -163,13 +159,14 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
         prompt += `Output strictly as JSON Array: [{"script": "...", "image_prompt": "..."}]`;
 
         try {
-            const res = await fetch(SCRIPT_API, {
+            // FIX: Using Proxy to Fetch
+            const res = await fetch(PROXY + encodeURIComponent(SCRIPT_URL), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prompt: prompt })
             });
 
-            if(!res.ok) throw new Error("Vercel Connection Failed. Upload to GitHub.");
+            if(!res.ok) throw new Error("Connection Failed. Server Blocked.");
 
             const data = await res.json();
             
@@ -181,7 +178,7 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
             renderCards(cleanData, lang === "urdu");
 
         } catch (e) {
-            alert("Script Error: " + e.message + "\n\nTry uploading this file to GitHub.");
+            alert("Error: " + e.message);
             console.error(e);
         } finally {
             load.style.display = "none";
@@ -237,7 +234,7 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
         });
     }
 
-    // --- 4. MAKE AUDIO (Microsoft TTS) ---
+    // --- 4. MAKE AUDIO ---
     async function makeAudio(id) {
         const text = document.getElementById(`txt-${id}`).value;
         const btn = document.getElementById(`btn-aud-${id}`);
@@ -253,7 +250,7 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
                     text: text, 
-                    voice: "ur-pk-male", // Default to Urdu Male
+                    voice: "ur-pk-male",
                     rate: "0", pitch: "0" 
                 })
             });
@@ -269,7 +266,7 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
         finally { btn.disabled = false; btn.innerHTML = `<span class="material-icons-round">mic</span> Audio ${id}`; }
     }
 
-    // --- 5. MAKE IMAGE (Flux Live URL - No Token) ---
+    // --- 5. MAKE IMAGE ---
     async function makeImage(id) {
         const prompt = document.getElementById(`prm-${id}`).value;
         const btn = document.getElementById(`btn-img-${id}`);
@@ -280,22 +277,17 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
         stat.innerText = `Making Image ${id}...`;
 
         try {
-            // DIRECT CALL TO YOUR SPACE (Free, No Token)
-            const res = await fetch(IMAGE_API, {
+            // Direct Space Call
+            const res = await fetch(PROXY + encodeURIComponent(IMAGE_API), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    data: [
-                        prompt, // Prompt
-                        1280,   // Width
-                        720,    // Height
-                        -1      // Random Seed
-                    ]
+                    data: [ prompt, 1280, 720, -1 ]
                 })
             });
 
             const json = await res.json();
-            const url = json.data[0].url; // Gradio format
+            const url = json.data[0].url;
 
             document.getElementById(`img-${id}`).src = url;
             document.getElementById(`res-img-${id}`).style.display = "block";
@@ -303,7 +295,7 @@ audio { width: 100%; height: 35px; margin-bottom: 5px; }
 
         } catch(e) { 
             console.error(e);
-            stat.innerText = "Image Error! (Try Reloading)"; 
+            stat.innerText = "Image Error! Try again."; 
         } 
         finally { btn.disabled = false; btn.innerHTML = `<span class="material-icons-round">image</span> Image ${id}`; }
     }
